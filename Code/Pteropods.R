@@ -42,9 +42,20 @@ nh25.3mo_AragSat.40m <- na.stinterp(nh25.3mo$Arag40m)
 nh5.3mo_LogLim <- na.stinterp(nh5.3mo$Log10LimDensity)
 nh25.3mo_LogLim <- na.stinterp(nh25.3mo$Log10LimDensity)
 
+#get the min and max dates so that the code can be updated w/ new data
+nh5.start.year <- min(nh5$YYYY)
+nh5.end.year <- max(nh5$YYYY)
+nh5.start.mo <- min(nh5$MM)
+nh5.end.mo <- max(nh5$MM)
+
+nh25.start.year <- min(nh25$YYYY)
+nh25.end.year <- max(nh25$YYYY)
+nh25.start.mo <- min(nh25$MM)
+nh25.end.mo <- max(nh25$MM)
+
 #create a time series variable
-nh5.ts <- ts(nh5_interp[], start = c(1996,5), end = c(2018,7), frequency = 12)
-nh25.ts <- ts(nh25_interp[], start = c(1998,1), end = c(2016,6), frequency = 12)
+nh5.ts <- ts(nh5_interp[], start = c(nh5.start.year,nh5.start.mo), end = c(nh5.end.year,nh5.end.mo), frequency = 12)
+nh25.ts <- ts(nh25_interp[], start = c(nh25.start.year,nh25.start.mo), end = c(nh25.end.year,nh25.end.mo), frequency = 12)
 
 nh5.3mo.AragSat.ts <- ts(nh5.3mo_AragSat[], start = c(2006,1), end = c(2018,7), frequency = 12)
 nh5.3mo.AragSat.40m.ts <- ts(nh5.3mo_AragSat.40m[], start = c(2006,1), end = c(2018,7), frequency = 12)
