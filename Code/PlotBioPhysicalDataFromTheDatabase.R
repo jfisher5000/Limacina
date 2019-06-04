@@ -186,7 +186,7 @@ pl.no.copes <- ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly, fil
   #xlim(min(data$date),max(data$date))+
   ggtitle("Northern Copepod Biomass")+
   xlab("Year") +
-  ylab("Monthyl biomass anomaly Log10 C m-3")
+  ylab("Monthly biomass anomaly (Log10 C m-3)")
 
 
 
