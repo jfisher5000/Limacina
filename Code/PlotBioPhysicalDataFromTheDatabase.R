@@ -53,10 +53,10 @@ data <- read.csv("qryNoSoBiomass_Richness_w_BasinScaleIndices.csv",header=TRUE)
 
 # get the start and end dates of the data
 start.yr = min(data$YYYY)
-start.mo = min(data$MM)
+start.mo = min(data$MM[data$YYYY==start.yr])
 
 end.yr = max(data$YYYY)
-end.mo = max(data$MM)
+end.mo = max(data$MM[data$YYYY==end.yr])
 
 size <- dim(data)
 no.col <- ncol(data)
@@ -71,14 +71,18 @@ data.3mo <- matrix(NA, no.row, no.col) #create matrix to store output in
 colnames(data.3mo) <- colnames(data)  #name the columns as the data
 
 #only do for the bio data so start at 7
-#for(i in 7:no.col){
-  for(i in 7:8){
+for(i in 7:no.col){
+  # for(i in 7:8){
 
   
   #turn your data into a timeseries 
-  data.ts <- ts(data[ ,i], start = c(start.yr,start.mo), end = c(end.yr,end.mo), frequency = 12)
+  data.ts <- ts(data[ ,i], 
+                start = c(start.yr,start.mo), 
+                end = c(end.yr,end.mo), 
+                frequency = 12)
   
-  data.nonan <- na.approx(data.ts, na.rm = TRUE)
+  data.nonan <- na.approx(data[,i],
+                          na.rm=FALSE)
   
   #interpolate over NaNs
   #data.nonan <- na.stinterp(data.ts)
@@ -97,9 +101,13 @@ colnames(data.3mo) <- colnames(data)  #name the columns as the data
 #put the rest of the data in the matrix
 data.3mo[ ,1] <- (data$SigmaPlotDate) 
 data.3mo[ ,2] <- (data$YYYY)   
-data.3mo[ ,3] <- (data$MM)   
+data.3mo[ ,3] <- (data$MM)  
+data.3mo[ ,3] <- (data$MM)
+data.3mo[ ,3] <- (data$MM)
+data.3mo[ ,3] <- (data$MM)
 
-
+#if you want to plot everything use matplot (matrix plot)
+#matplot(data.3mo, type="l")
 
 # ####
 # # Let's compare filter and decaverage to compute 3mo running means
@@ -147,15 +155,15 @@ max.date <- max(data$date) + 30   #pad the end date by 15 days
 ####Plot Nortern and Southern biomass anomalies
 
 #add a column with your condition for the color
-data <- data %>% mutate(NoSo.color = ifelse(data$NorthernBiomassAnomaly>0, "pos", "neg"))
+data <- data %>% mutate(NoCop.color = ifelse(data$NorthernBiomassAnomaly>0, "pos", "neg"))
 
 #trying to get the anomalies colored
-anom.colors <- c("indianred3", "royalblue3")
+anom.color <- c("indianred3", "royalblue3")
 
 #now plot with ggplot
-pl.no.copes <- ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly, fill = mycolor)) + #fill color based on pos or neg anoms
+pl.no.copes <- ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly, fill = NoCop.color)) + #fill color based on pos or neg anoms
   geom_bar(stat = "identity", color = "black", size=0.05, na.rm = TRUE) + #make the bar outline black
-  scale_fill_manual(values = anom.colors) +
+  scale_fill_manual(values = anom.color) +
     theme_light() +
   theme(
   legend.position = "none",
