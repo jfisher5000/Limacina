@@ -9,7 +9,7 @@ rm(list=ls())
 
 #library(RODBC)
 #library(doBy)
-library(pastecs)
+#library(pastecs)
 library(lubridate)  # for working with dates
 library(ggplot2)    # for creating graphs
 library(scales)     # to access breaks/formatting functions
@@ -72,8 +72,6 @@ colnames(data.3mo) <- colnames(data)  #name the columns as the data
 
 #only do for the bio data so start at 7
 for(i in 7:no.col){
-  # for(i in 7:8){
-
   
   #turn your data into a timeseries 
   data.ts <- ts(data[ ,i], 
@@ -84,10 +82,7 @@ for(i in 7:no.col){
   data.nonan <- na.approx(data[,i],
                           na.rm=FALSE)
   
-  #interpolate over NaNs
-  #data.nonan <- na.stinterp(data.ts)
-  
-  #make sure you are using the correct filter function from the stats package
+    #make sure you are using the correct filter function from the stats package
   filter <- stats::filter
   
   #compute the 3mo running mean using filter
@@ -102,9 +97,9 @@ for(i in 7:no.col){
 data.3mo[ ,1] <- (data$SigmaPlotDate) 
 data.3mo[ ,2] <- (data$YYYY)   
 data.3mo[ ,3] <- (data$MM)  
-data.3mo[ ,3] <- (data$MM)
-data.3mo[ ,3] <- (data$MM)
-data.3mo[ ,3] <- (data$MM)
+data.3mo[ ,4] <- (data$NPGO)
+data.3mo[ ,5] <- (data$PDO)
+data.3mo[ ,6] <- (data$ONI)
 
 #if you want to plot everything use matplot (matrix plot)
 #matplot(data.3mo, type="l")
@@ -136,32 +131,22 @@ data.3mo[ ,3] <- (data$MM)
 # okay now let's make some plots
 #####
 
-
-#interpolate over the nas
-no.cope.nonan = na.stinterp(data$NorthernBiomassAnomaly)
-#create a timeseries object 
-#no.cope.ts <- ts(no.cope.nonan, start = c(start.yr,start.mo), end = c(end.yr,end.mo), frequency = 12)
-#now apply the 3mo running average 
-no.cope.3mo <- filter(no.cope.nonan, c(1,1,1)/3, method="convolution", sides=2)
-no.cope.3mo.num <- as.numeric(no.cope.3mo)
-data <- data %>% mutate(no.cope.3mo.num = no.cope.3mo.num, na.rm = FALSE)
-
-
 #deal with the dates
-data <- data %>% mutate(date = as.Date(data$SigmaPlotDate, format = '%m/%d/%Y'))
-min.date <- min(data$date) - 30   #pad the start date by 15 days
-max.date <- max(data$date) + 30   #pad the end date by 15 days
+data.3mo <- data.3mo %>% mutate(date = as.Date(data$SigmaPlotDate, format = '%m/%d/%Y'))
+min.date <- min(data.3mo$date) - 30   #pad the start date by 30 days
+max.date <- max(data.3mo$date) + 30   #pad the end date by 30 days
 
 ####Plot Nortern and Southern biomass anomalies
 
 #add a column with your condition for the color
-data <- data %>% mutate(NoCop.color = ifelse(data$NorthernBiomassAnomaly>0, "pos", "neg"))
+data.3mo <- data.3mo %>% mutate(NoCop.color = ifelse(data.3mo$NorthernBiomassAnomaly>0, "pos", "neg"))
+data.3mo <- data.3mo %>% mutate(SoCop.color = ifelse(data.3mo$SouthernBiomassAnomaly>0, "pos", "neg"))
 
 #trying to get the anomalies colored
 anom.color <- c("indianred3", "royalblue3")
 
 #now plot with ggplot
-pl.no.copes <- ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly, fill = NoCop.color)) + #fill color based on pos or neg anoms
+pl.no.copes <- ggplot(data = data.3mo, aes(x = date, y = NorthernBiomassAnomaly, fill = NoCop.color)) + #fill color based on pos or neg anoms
   geom_bar(stat = "identity", color = "black", size=0.05, na.rm = TRUE) + #make the bar outline black
   scale_fill_manual(values = anom.color) +
     theme_light() +
@@ -180,7 +165,10 @@ pl.no.copes <- ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly, fil
                   
   ggtitle("Northern Copepod Biomass") +
   xlab("Year") +
-  ylab("Monthly biomass anomaly (Log10 C m-3)")
+  ylab("Monthly biomass anomaly (Log10 C m-3)") +
+  
+  # ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly)) + #overlay the monthly data as a line
+  # geom_line(stat = "identity", color = "black", size=0.05, na.rm = TRUE)
 
 
 
