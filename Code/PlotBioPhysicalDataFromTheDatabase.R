@@ -7,13 +7,15 @@
 
 rm(list=ls())
 
-#library(RODBC)
-#library(doBy)
+library(RODBC)      #database
+library(doBy)       #database
 library(pastecs)
 library(lubridate)  # for working with dates
 library(ggplot2)    # for creating graphs
+library(ggplotify)
 library(scales)     # to access breaks/formatting functions
 library(gridExtra)  # for arranging plots
+library(grid)       # for arranging plots
 library(plyer)
 library(dplyr)
 library(stinepack)  #time-series anz
@@ -22,13 +24,13 @@ library(ggfortify)
 library(zoo)        #working with time series
 
 
-# db<-file.path("Z:/zooplank/Database/ZoopLab_FE_JenniferFisher.accdb") #connect database.
-# channel<-odbcConnectAccess2007(db, uid="",pwd="jfisher")
-# 
-# 
+# db <- file.path("Y:/zooplank/Database/ZoopLab_FE_JenniferFisher.accdb") #connect database.
+# channel <- odbcConnectAccess2007(db, uid="",pwd="jfisher")
+# # 
+# # 
 # # This downloads the buoy data (good to get this to make sure we have the right table format)
 # channel <- odbcConnect("NWFSC_OCEAN", uid="", pwd="");
-# existingData<-sqlQuery(channel, "SELECT TOP 1000 [YYYY]
+# existingData <- sqlQuery(channel, "SELECT TOP 1000 [YYYY]
 #                        ,[MM]
 #                        ,[DD]
 #                        ,[hh]
@@ -136,9 +138,8 @@ data <- bind_cols(data[1:no.col],data.3mo[7:no.col])
 
 
 #####
-# okay now let's make some plots
+# okay now let's make some plots with ggplot
 #####
-
 
 
 #deal with the dates
@@ -149,16 +150,16 @@ min.date <- min(data$date) - 30   #pad the start date by 30 days
 max.date <- max(data$date) + 30   #pad the end date by 30 days
 
 
-####Plot Nortern and Southern biomass anomalies
-
-#add a column with your condition for the color
+#add a column with your condition to color the anomalies
 data <- data %>% mutate(NoCop.color = ifelse(data$NorthernBiomassAnomaly3mo>0, "pos", "neg"))
 data <- data %>% mutate(SoCop.color = ifelse(data$SouthernBiomassAnomaly3mo>0, "pos", "neg"))
+data <- data %>% mutate(PDO.color = ifelse(data$PDO>0, "pos", "neg"))
 
 #trying to get the anomalies colored
 anom.color <- c("indianred3", "royalblue3")
 
-#now plot with ggplot
+
+#### Northerns
 pl.no.copes <- ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly3mo, fill = NoCop.color)) + #fill color based on pos or neg anoms
   geom_bar(stat = "identity", color = "black", size=0.05, na.rm = TRUE) +  #make the bar outline black
   scale_fill_manual(values = anom.color) +  #color the anoms w/ what you want
@@ -181,15 +182,14 @@ pl.no.copes <- ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly3mo, 
   ggtitle("Northern Copepod Biomass") +
   theme(plot.title = element_text(size = 12)) +
   xlab("Year") +
-  ylab("Monthly biomass anomaly (Log10 C m-3)") 
+  ylab("Monthly biomass anomaly\n(Log10 C m-3)")  # \n adds a line break
   
-  geom_point(data = data, aes(x = date, y = NorthernBiomassAnomaly), color = "black") +
-  geom_ribbon(data = data, aes(x = date, y = NorthernBiomassAnomaly), color = "black")
+  #geom_line(data = data, aes(x = date, y = NorthernBiomassAnomaly), color = "black", grouping = "YYYY") +
+  #geom_ribbon(data = data, aes(x = date, y = NorthernBiomassAnomaly), color = "black")
 
 
 
-
-
+#### Southerns
 pl.so.copes <- ggplot(data = data, aes(x = date, y = SouthernBiomassAnomaly3mo, fill = SoCop.color)) + #fill color based on pos or neg anoms
   geom_bar(stat = "identity", color = "black", size=0.05, na.rm = TRUE) +  #make the bar outline black
   scale_fill_manual(values = rev(anom.color)) +  #color the anoms w/ what you want
@@ -212,23 +212,82 @@ pl.so.copes <- ggplot(data = data, aes(x = date, y = SouthernBiomassAnomaly3mo, 
   ggtitle("Southern Copepod Biomass") +
   theme(plot.title = element_text(size = 12)) +
   xlab("Year") +
-  ylab("Monthly biomass anomaly (Log10 C m-3)")
+  ylab("Monthly biomass anomaly\n(Log10 C m-3)")  # \n adds a line break
+
+
+#### PDO and ONI
+pl.PDO <- ggplot(data = data) + 
+  geom_bar(aes(x = date, y = PDO, fill = PDO.color),  #fill color based on pos or neg anoms
+           stat = "identity", color = "black", size=0.05, na.rm = TRUE) +  #make the bar outline black
+  scale_fill_manual(values = rev(anom.color)) +  #color the anoms w/ what you want
+  
+  theme_light() +
+  theme(
+    legend.position = "none",
+    #panel.border = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.minor.x = element_blank()
+  ) +
+  
+  scale_x_date(limits = as.Date(c(min.date.3mo,max.date.3mo)), 
+               date_breaks = "1 years",
+               labels = date_format("%y")) +
+  
+  coord_cartesian(xlim = NULL, ylim = NULL, expand = FALSE) +  #gets rid of extra white space
+  
+  ggtitle("PDO") +
+  theme(plot.title = element_text(size = 12)) +
+  xlab("Year") +
+  ylab("PDO") +
+
+  geom_point(data = data, aes(x = date, y = ONI), color = "black") +
+  geom_line(data = data, aes(x = date, y = ONI), color = "black") 
+  
+
+#### NH-5 50m T
+
+pl.nh5_50m_T <- ggplot(data = data) +
+  geom_bar(aes(x = date, y = X50mTAnom3mo, fill = "anything"),  #this fill is a possible factor- its for some reason needed and then overwritten with scale_fill_manual
+           stat = "identity", color = "black", size=0.05, na.rm = TRUE) +  #make the bar outline black
+  scale_fill_manual(values = "grey74") +
+  
+  theme_light() +
+  theme(
+    legend.position = "none",
+    #panel.border = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.minor.x = element_blank()
+  ) +
+  
+  coord_cartesian(xlim = NULL, 
+                  ylim = (NULL), expand = FALSE) +  #gets rid of extra white space
+  
+  scale_x_date(limits = as.Date(c(min.date.3mo,max.date.3mo)), 
+               date_breaks = "1 years",
+               labels = date_format("%y")) +
+  ylim(-2,3.25)  +  #had to hard code the limits...would like to fix this
+  
+  ggtitle("NH-5 50-m Temperature") +
+  theme(plot.title = element_text(size = 12)) +
+  xlab("Year") +
+  ylab("Monthly anomaly (°C)")  
 
 
 
-pl.PDO <- ggplot(data, aes(x = date, y = PDO)) +
-  geom_bar(stat = "identity", color = "red", size=0.75, na.rm = TRUE)
+#### show the plots on the same page
+####grid.draw is better than grid.arrange because it plots a table of plots all sized the same regardless of the size of the axis labels
+grid.newpage()
+final.plots <- as.ggplot(grid.draw(rbind(ggplotGrob(pl.PDO), ggplotGrob(pl.nh5_50m_T),ggplotGrob(pl.no.copes),ggplotGrob(pl.so.copes), size = "last")))
 
-pl.ONI <- ggplot(data, aes(x = date, y = ONI)) +
-  geom_bar(stat = "identity", color = "red", size=0.75, na.rm = TRUE)
 
-# Show the plots on the same page
-final.plots <- grid.arrange(pl.so.copes, pl.no.copes, pl.ONI, pl.PDO, ncol = 1, nrow = 4)
-
-#save the plot
+#### save the plot- this works for gg objects but the grid.draw is not gg
 ggsave("BiophysicalVars_3mo.png", plot = final.plots, device = "png", path = "C:/_JF/HMSC/Data/Limacina/Figures",
-       width = 8.5, height = 10, units = c("in"),
-       dpi = 300)
+       width = 8.5, height = 10, units = c("in"), dpi = 300)
+
+png("C:/_JF/HMSC/Data/Limacina/Figures/BiophysicalVars_3mo.png", width = 8.5, height = 10, units = "in",
+       res = 300)
 
 
 
