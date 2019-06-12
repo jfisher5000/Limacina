@@ -7,8 +7,8 @@
 
 rm(list=ls())
 
-library(RODBC)      #database
-library(doBy)       #database
+#library(RODBC)      #database
+#library(doBy)       #database
 library(pastecs)
 library(lubridate)  # for working with dates
 library(ggplot2)    # for creating graphs
@@ -16,7 +16,7 @@ library(ggplotify)
 library(scales)     # to access breaks/formatting functions
 library(gridExtra)  # for arranging plots
 library(grid)       # for arranging plots
-library(plyer)
+#library(plyer)
 library(dplyr)
 library(stinepack)  #time-series anz
 library(lubridate)  #for working with dates
@@ -101,18 +101,6 @@ data.3mo <- as.data.frame(data.3mo)
 #combine the running means with the original data
 data <- bind_cols(data[1:no.col],data.3mo[7:no.col])
 
-# #put the rest of the data in the matrix
-# data.3mo[ ,1] <- (data$SigmaPlotDate) 
-# data.3mo[ ,2] <- (data$YYYY)   
-# data.3mo[ ,3] <- (data$MM)  
-# data.3mo[ ,4] <- (data$NPGO)
-# data.3mo[ ,5] <- (data$PDO)
-# data.3mo[ ,6] <- (data$ONI)
-
-
-
-#if you want to plot everything use matplot (matrix plot)
-#matplot(data.3mo, type="l")
 
 # ####
 # # Let's compare filter and decaverage to compute 3mo running means
@@ -140,6 +128,9 @@ data <- bind_cols(data[1:no.col],data.3mo[7:no.col])
 #####
 # okay now let's make some plots with ggplot
 #####
+
+#if you want to plot everything use matplot (matrix plot)
+#matplot(data.3mo, type="l")
 
 
 #deal with the dates
@@ -173,7 +164,7 @@ pl.no.copes <- ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly3mo, 
   panel.grid.minor.x = element_blank()
   ) +
     
-  scale_x_date(limits = as.Date(c(min.date.3mo,max.date.3mo)), 
+  scale_x_date(limits = as.Date(c(min.date,max.date)), 
   date_breaks = "1 years",
   labels = date_format("%y")) +
  
@@ -182,7 +173,7 @@ pl.no.copes <- ggplot(data = data, aes(x = date, y = NorthernBiomassAnomaly3mo, 
   ggtitle("Northern Copepod Biomass") +
   theme(plot.title = element_text(size = 12)) +
   xlab("Year") +
-  ylab("Monthly biomass anomaly\n(Log10 C m-3)")  # \n adds a line break
+  ylab("Monthly anomaly\n(Log10 C m-3)")  # \n adds a line break
   
   #geom_line(data = data, aes(x = date, y = NorthernBiomassAnomaly), color = "black", grouping = "YYYY") +
   #geom_ribbon(data = data, aes(x = date, y = NorthernBiomassAnomaly), color = "black")
@@ -203,7 +194,7 @@ pl.so.copes <- ggplot(data = data, aes(x = date, y = SouthernBiomassAnomaly3mo, 
     panel.grid.minor.x = element_blank()
   ) +
   
-  scale_x_date(limits = as.Date(c(min.date.3mo,max.date.3mo)), 
+  scale_x_date(limits = as.Date(c(min.date,max.date)), 
                date_breaks = "1 years",
                labels = date_format("%y")) +
   
@@ -212,7 +203,7 @@ pl.so.copes <- ggplot(data = data, aes(x = date, y = SouthernBiomassAnomaly3mo, 
   ggtitle("Southern Copepod Biomass") +
   theme(plot.title = element_text(size = 12)) +
   xlab("Year") +
-  ylab("Monthly biomass anomaly\n(Log10 C m-3)")  # \n adds a line break
+  ylab("Monthly anomaly\n(Log10 C m-3)")  # \n adds a line break
 
 
 #### PDO and ONI
@@ -230,23 +221,22 @@ pl.PDO <- ggplot(data = data) +
     panel.grid.minor.x = element_blank()
   ) +
   
-  scale_x_date(limits = as.Date(c(min.date.3mo,max.date.3mo)), 
+  scale_x_date(limits = as.Date(c(min.date,max.date)), 
                date_breaks = "1 years",
                labels = date_format("%y")) +
   
   coord_cartesian(xlim = NULL, ylim = NULL, expand = FALSE) +  #gets rid of extra white space
   
-  ggtitle("PDO") +
+  ggtitle("PDO (bars) and ONI (line)") +
   theme(plot.title = element_text(size = 12)) +
   xlab("Year") +
-  ylab("PDO") +
+  ylab("SST anomaly (°C)") +
 
   geom_point(data = data, aes(x = date, y = ONI), color = "black") +
   geom_line(data = data, aes(x = date, y = ONI), color = "black") 
   
 
 #### NH-5 50m T
-
 pl.nh5_50m_T <- ggplot(data = data) +
   geom_bar(aes(x = date, y = X50mTAnom3mo, fill = "anything"),  #this fill is a possible factor- its for some reason needed and then overwritten with scale_fill_manual
            stat = "identity", color = "black", size=0.05, na.rm = TRUE) +  #make the bar outline black
@@ -264,7 +254,7 @@ pl.nh5_50m_T <- ggplot(data = data) +
   coord_cartesian(xlim = NULL, 
                   ylim = (NULL), expand = FALSE) +  #gets rid of extra white space
   
-  scale_x_date(limits = as.Date(c(min.date.3mo,max.date.3mo)), 
+  scale_x_date(limits = as.Date(c(min.date,max.date)), 
                date_breaks = "1 years",
                labels = date_format("%y")) +
   ylim(-2,3.25)  +  #had to hard code the limits...would like to fix this
@@ -279,15 +269,29 @@ pl.nh5_50m_T <- ggplot(data = data) +
 #### show the plots on the same page
 ####grid.draw is better than grid.arrange because it plots a table of plots all sized the same regardless of the size of the axis labels
 grid.newpage()
-final.plots <- as.ggplot(grid.draw(rbind(ggplotGrob(pl.PDO), ggplotGrob(pl.nh5_50m_T),ggplotGrob(pl.no.copes),ggplotGrob(pl.so.copes), size = "last")))
+final.plots <- grid.draw(rbind(ggplotGrob(pl.PDO), ggplotGrob(pl.nh5_50m_T),ggplotGrob(pl.no.copes),ggplotGrob(pl.so.copes), size = "last"),
+                         recording = TRUE)
+
+#this worked but was really really really frustrating :( gggrrrrr.....
+####rrrraaaahhhhhh!!!!! NOW IT DOES NOT WORK :( :( :(!!!
+dev.copy(png,'C:/_JF/HMSC/Data/Limacina/Figures/BiophysicalVars_3mo.png', width = 8.5, height = 10, units = "in",
+         res = 300)
+dev.off()
 
 
-#### save the plot- this works for gg objects but the grid.draw is not gg
-ggsave("BiophysicalVars_3mo.png", plot = final.plots, device = "png", path = "C:/_JF/HMSC/Data/Limacina/Figures",
-       width = 8.5, height = 10, units = c("in"), dpi = 300)
-
-png("C:/_JF/HMSC/Data/Limacina/Figures/BiophysicalVars_3mo.png", width = 8.5, height = 10, units = "in",
-       res = 300)
+# None of these worked....
+# ggsave("Frustrating!!.png", final.plots)
+# 
+# #### save the plot- this works for gg objects but the grid.draw is not gg
+# ggsave("BiophysicalVars_3mo.png", plot = final.plots, device = "png", path = "C:/_JF/HMSC/Data/Limacina/Figures",
+#        width = 8.5, height = 10, units = c("in"), dpi = 300)
+# 
+# png("C:/_JF/HMSC/Data/Limacina/Figures/BiophysicalVars_3mo2.png", width = 1000, height = 600, units = "px")
+# grid.draw(final.plots)
+# dev.off()
+# 
+# png("C:/_JF/HMSC/Data/Limacina/Figures/BiophysicalVars_3mo2.png", width = 8.5, height = 10, units = "in",
+#        res = 300)
 
 
 
